@@ -13,7 +13,7 @@ const Ordenes = () => {
   useEffect(() => {
     loadOrders();
     // Poll for new orders every 10 seconds
-    const interval = setInterval(loadOrders, 10000);
+    const interval = setInterval(loadOrders, 5000);
     return () => clearInterval(interval);
   }, []);
 

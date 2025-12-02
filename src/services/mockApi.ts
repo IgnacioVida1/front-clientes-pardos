@@ -1,11 +1,17 @@
 // services/mockApi.ts
-import { Order, OrderState, DashboardMetrics, Orders } from "@/types/order";
+import { Order, OrderState, DashboardMetrics, DashboardResumen, Orders } from "@/types/order";
 
 const BASE_URL = "https://wlgzjwd1w9.execute-api.us-east-1.amazonaws.com";
 
+export const fetchDashboardResumen = async (): Promise<DashboardResumen> => {
+  const response = await fetch(BASE_URL + '/dashboard/resumen');
+  if (!response.ok) throw new Error('Failed to fetch dashboard summary');
+  return response.json();
+};
+
 export const fetchDashboardMetrics = async (): Promise<DashboardMetrics> => {
   const response = await fetch(BASE_URL + '/dashboard/metricas');
-  if (!response.ok) throw new Error('Failed to fetch metrics');
+  if (!response.ok) throw new Error('Failed to fetch dashboard metrics');
   return response.json();
 };
 

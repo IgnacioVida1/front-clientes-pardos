@@ -1,5 +1,13 @@
 export type OrderState = "COOKING" | "PACKAGING" | "DELIVERY" | "DELIVERED" | "COMPLETED" | "CREATED" | "IN_PROGRESS" | "DONE";
 
+export interface DashboardResumen {
+  totalPedidos: number;
+  pedidosHoy: number;
+  pedidosActivos: number;
+  tiempoPromedioEntrega: number;
+  ultimaActualizacion: string;
+}
+
 export interface DashboardMetrics {
   pedidosPorEstado: {
     CREATED: number;
@@ -10,7 +18,7 @@ export interface DashboardMetrics {
     COMPLETED: number;
     IN_PROGRESS: number;
   };
-  tiempoPorEtapa: {
+  tiemposPorEtapa: {
     COOKING: number;
     PACKAGING: number;
     DELIVERY: number;

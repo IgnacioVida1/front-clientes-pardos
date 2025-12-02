@@ -50,101 +50,81 @@ const stateIcons = {
   DELIVERED: CheckCircle
 };
 
-// FUNCIÓN CORREGIDA: Determina qué etapa necesita confirmación
+// FUNCIÓN CORREGIDA - Prioriza etapas por orden de flujo
 const getStageToConfirm = (etapas: OrderEtapa[]): OrderState | null => {
-  if (!etapas || etapas.length === 0) return "COOKING";
+  if (!etapas || etapas.length === 0) {
+    console.log("📭 No hay etapas, devolviendo COOKING");
+    return "COOKING";
+  }
   
-  console.log("🔍 Analizando etapas para determinar próxima confirmación:");
-  etapas.forEach((etapa, i) => {
-    console.log(`  ${i}. ${etapa.stepName} - ${etapa.status}`);
-  });
+  console.log("🔍 ANALIZANDO ETAPAS para determinar próxima confirmación:");
+  console.table(etapas.map((e, i) => ({
+    index: i,
+    step: e.stepName,
+    status: e.status,
+    started: e.startedAt?.substring(11, 16) || 'N/A',
+    finished: e.finishedAt?.substring(11, 16) || 'N/A'
+  })));
   
-  // ORDEN DE ETAPAS: COOKING → PACKAGING → DELIVERY → DELIVERED
+  // ORDEN DE ETAPAS (de menos a más avanzada)
+  const FLOW = ["COOKING", "PACKAGING", "DELIVERY", "DELIVERED"];
   
-  // Primero, agrupar etapas por nombre
-  const etapasPorNombre: Record<string, OrderEtapa[]> = {};
-  etapas.forEach(etapa => {
-    if (!etapasPorNombre[etapa.stepName]) {
-      etapasPorNombre[etapa.stepName] = [];
+  // 1. Primero, identificar la etapa MÁS AVANZADA que esté IN_PROGRESS
+  let mostAdvancedInProgress: OrderState | null = null;
+  
+  for (let i = FLOW.length - 1; i >= 0; i--) {
+    const stage = FLOW[i];
+    const hasStageInProgress = etapas.some(e => 
+      e.stepName === stage && e.status === "IN_PROGRESS"
+    );
+    
+    if (hasStageInProgress) {
+      mostAdvancedInProgress = stage as OrderState;
+      console.log(`🎯 Etapa más avanzada IN_PROGRESS: ${mostAdvancedInProgress}`);
+      break;
     }
-    etapasPorNombre[etapa.stepName].push(etapa);
-  });
-  
-  console.log("📊 Etapas agrupadas por nombre:", etapasPorNombre);
-  
-  // Verificar el estado de cada etapa (tomar el estado más reciente)
-  const estadoEtapas = {
-    COOKING: etapasPorNombre["COOKING"]?.slice(-1)[0]?.status || "PENDING",
-    PACKAGING: etapasPorNombre["PACKAGING"]?.slice(-1)[0]?.status || "PENDING",
-    DELIVERY: etapasPorNombre["DELIVERY"]?.slice(-1)[0]?.status || "PENDING",
-    DELIVERED: etapasPorNombre["DELIVERED"]?.slice(-1)[0]?.status || "PENDING",
-  };
-  
-  console.log("🎯 Estado de cada etapa:", estadoEtapas);
-  
-  // LÓGICA CORREGIDA:
-  // 1. Si PACKAGING está IN_PROGRESS → Confirmar PACKAGING
-  // 2. Si COOKING está DONE y PACKAGING está PENDING → Confirmar PACKAGING
-  // 3. Si COOKING está IN_PROGRESS y no hay otro COOKING DONE → Confirmar COOKING
-  // 4. Y así sucesivamente...
-  
-  if (estadoEtapas.PACKAGING === "IN_PROGRESS") {
-    console.log("✅ Próxima etapa a confirmar: PACKAGING (está IN_PROGRESS)");
-    return "PACKAGING";
   }
   
-  if (estadoEtapas.DELIVERY === "IN_PROGRESS") {
-    console.log("✅ Próxima etapa a confirmar: DELIVERY (está IN_PROGRESS)");
-    return "DELIVERY";
+  if (mostAdvancedInProgress) {
+    // Verificar si esta etapa ya tiene un registro DONE (inconsistencia)
+    const hasStageDone = etapas.some(e => 
+      e.stepName === mostAdvancedInProgress && 
+      (e.status === "DONE" || e.status === "COMPLETED")
+    );
+    
+    if (hasStageDone) {
+      console.log(`⚠️ INCONSISTENCIA: ${mostAdvancedInProgress} tiene tanto DONE como IN_PROGRESS`);
+      
+      // Buscar la siguiente etapa en el flujo
+      const currentIndex = FLOW.indexOf(mostAdvancedInProgress);
+      if (currentIndex < FLOW.length - 1) {
+        const nextStage = FLOW[currentIndex + 1] as OrderState;
+        console.log(`💡 Saltando a siguiente etapa: ${nextStage}`);
+        return nextStage;
+      }
+    } else {
+      return mostAdvancedInProgress;
+    }
   }
   
-  if (estadoEtapas.DELIVERED === "IN_PROGRESS") {
-    console.log("✅ Próxima etapa a confirmar: DELIVERED (está IN_PROGRESS)");
-    return "DELIVERED";
-  }
-  
-  // Ahora, determinar la siguiente basada en lo completado
-  if (estadoEtapas.COOKING === "DONE" && estadoEtapas.PACKAGING === "PENDING") {
-    console.log("✅ Próxima etapa a confirmar: PACKAGING (COOKING ya está DONE)");
-    return "PACKAGING";
-  }
-  
-  if (estadoEtapas.PACKAGING === "DONE" && estadoEtapas.DELIVERY === "PENDING") {
-    console.log("✅ Próxima etapa a confirmar: DELIVERY (PACKAGING ya está DONE)");
-    return "DELIVERY";
-  }
-  
-  if (estadoEtapas.DELIVERY === "DONE" && estadoEtapas.DELIVERED === "PENDING") {
-    console.log("✅ Próxima etapa a confirmar: DELIVERED (DELIVERY ya está DONE)");
-    return "DELIVERED";
-  }
-  
-  // Solo sugerir COOKING si no hay ningún COOKING DONE
-  const hasCookingDone = etapas.some(e => 
-    e.stepName === "COOKING" && (e.status === "DONE" || e.status === "COMPLETED")
+  // 2. Si no hay IN_PROGRESS, determinar cuál debería ser la siguiente
+  // Verificar qué etapas ya están DONE
+  const etapasDone = etapas.filter(e => 
+    e.status === "DONE" || e.status === "COMPLETED"
   );
   
-  if (!hasCookingDone && estadoEtapas.COOKING === "IN_PROGRESS") {
-    console.log("✅ Próxima etapa a confirmar: COOKING (está IN_PROGRESS y no hay DONE)");
-    return "COOKING";
-  }
+  const cookingDone = etapasDone.some(e => e.stepName === "COOKING");
+  const packagingDone = etapasDone.some(e => e.stepName === "PACKAGING");
+  const deliveryDone = etapasDone.some(e => e.stepName === "DELIVERY");
+  const deliveredDone = etapasDone.some(e => e.stepName === "DELIVERED");
   
-  if (!hasCookingDone && estadoEtapas.COOKING === "PENDING") {
-    console.log("✅ Próxima etapa a confirmar: COOKING (pendiente)");
-    return "COOKING";
-  }
+  console.log("📊 Etapas DONE:", { cookingDone, packagingDone, deliveryDone, deliveredDone });
   
-  // Si llegamos aquí y hay un COOKING IN_PROGRESS pero también hay un COOKING DONE,
-  // entonces es un estado inconsistente - ignorar el IN_PROGRESS
-  if (hasCookingDone && estadoEtapas.COOKING === "IN_PROGRESS") {
-    console.log("⚠️ Estado inconsistente: COOKING tiene tanto DONE como IN_PROGRESS");
-    console.log("💡 Asumiendo que el DONE es el válido, pasando a PACKAGING");
-    
-    // Si PACKAGING está PENDING, sugerir PACKAGING
-    if (estadoEtapas.PACKAGING === "PENDING") {
-      return "PACKAGING";
-    }
-  }
+  // Determinar próxima etapa basada en el flujo
+  if (!cookingDone) return "COOKING";
+  if (cookingDone && !packagingDone) return "PACKAGING";
+  if (cookingDone && packagingDone && !deliveryDone) return "DELIVERY";
+  if (cookingDone && packagingDone && deliveryDone && !deliveredDone) return "DELIVERED";
   
   console.log("❌ No se encontró etapa para confirmar");
   return null;
