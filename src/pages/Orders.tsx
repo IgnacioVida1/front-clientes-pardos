@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigation } from "@/components/restaurant/Navigation";
 import { OrderCard } from "@/components/restaurant/OrderCard";
-import { Orders, OrderState } from "@/types/order";
+import { Orders, OrderState, OrderEtapa } from "@/types/order";
 import { fetchActiveOrders, updateOrderState } from "@/services/mockApi";
 import { useToast } from "@/hooks/use-toast";
 
@@ -48,34 +48,50 @@ const loadOrders = async () => {
   }
 };
 
-  const handleStateChange = async (orderId: string, newState: OrderState) => {
+const handleStateChange = async (orderId: string, stageToConfirm: OrderState) => {
   try {
-    await updateOrderState(orderId, newState);
+    console.log(`🔄 Actualizando orden ${orderId}: confirmando etapa ${stageToConfirm}`);
     
-    // Actualizar el estado local inmediatamente
+    await updateOrderState(orderId, stageToConfirm);
+    
+    // Actualizar el estado local
     setOrdenes(prevOrdenes => ({
       ...prevOrdenes,
-      pedidos: prevOrdenes.pedidos.map(order => 
-        order.orderId === orderId ? { ...order, status: newState } : order
-      )
+      pedidos: prevOrdenes.pedidos.map(order => {
+        if (order.orderId === orderId) {
+          // Crear una nueva etapa IN_PROGRESS (esto lo hará el backend realmente)
+          const newEtapa: OrderEtapa = {
+            stepName: stageToConfirm,
+            status: "IN_PROGRESS", // Temporal, el backend lo cambiará a DONE
+            startedAt: new Date().toISOString(),
+            finishedAt: null
+          };
+          
+          return {
+            ...order,
+            // No actualizar status directamente, esperar a que el backend actualice
+            etapas: [...(order.etapas || []), newEtapa]
+          };
+        }
+        return order;
+      })
     }));
     
     toast({
-      title: "Order Updated",
-      description: `Order moved to ${newState.toLowerCase()}`,
+      title: "Etapa Confirmada",
+      description: `Etapa ${stageToConfirm.toLowerCase()} confirmada exitosamente`,
     });
 
-    // Si el pedido está completado, recargar después de un delay
-    if (newState === "COMPLETED" || newState === "DELIVERED") {
-      setTimeout(() => {
-        loadOrders();
-      }, 2000);
-    }
+    // Recargar los pedidos después de 2 segundos para obtener el estado actualizado del backend
+    setTimeout(() => {
+      loadOrders();
+    }, 2000);
     
   } catch (error) {
+    console.error("Error actualizando estado:", error);
     toast({
       title: "Error",
-      description: "Failed to update order state",
+      description: "Failed to confirm stage",
       variant: "destructive",
     });
   }

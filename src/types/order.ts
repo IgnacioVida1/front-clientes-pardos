@@ -1,4 +1,4 @@
-export type OrderState = "COOKING" | "PACKAGING" | "DELIVERY" | "DELIVERED" | "COMPLETED";
+export type OrderState = "COOKING" | "PACKAGING" | "DELIVERY" | "DELIVERED" | "COMPLETED" | "CREATED" | "IN_PROGRESS" | "DONE";
 
 export interface DashboardMetrics {
   pedidosPorEstado: {
