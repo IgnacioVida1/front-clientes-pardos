@@ -10,15 +10,15 @@ import {
   Package as PackageIcon,
   Truck, 
   CheckCircle,
-  Loader2 // Agregamos Loader2 para el spinner
+  Loader2
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useState, useEffect } from "react"; // Agregamos useEffect
+import { useState, useEffect } from "react";
 
 interface OrderCardProps {
   order: Order;
-  onStateChange: (orderId: string, stateToConfirm: OrderState) => Promise<void>; // Cambiamos a async
-  onRefresh?: () => void; // Nueva prop para refrescar
+  onStateChange: (orderId: string, stateToConfirm: OrderState) => Promise<void>;
+  onRefresh?: () => void;
 }
 
 const stateColors = {
@@ -48,6 +48,41 @@ const stateIcons = {
   PACKAGING: PackageIcon,
   DELIVERY: Truck,
   DELIVERED: CheckCircle
+};
+
+// FUNCIÓN AUXILIAR: Obtener nombre del producto basado en productId
+const getProductName = (productId?: string): string => {
+  if (!productId) return "Producto";
+  
+  const productMap: Record<string, string> = {
+    "pollo_1_4": "1/4 de Pollo a la Brasa",
+    "pollo_1_2": "1/2 Pollo a la Brasa",
+    "pollo_entero": "Pollo Entero a la Brasa",
+    "chicha": "Chicha Morada Grande",
+    "inca_kola": "Inca Kola 500ml",
+    "coca_cola": "Coca Cola 500ml",
+    "agua_mineral": "Agua Mineral 625ml",
+    "papas_fritas": "Papas Fritas",
+    "ensalada_fresca": "Ensalada Fresca",
+    "yuca_frita": "Yuca Frita",
+    "arroz_chaufa": "Arroz Chaufa"
+  };
+  
+  return productMap[productId] || productId.replace(/_/g, ' ');
+};
+
+// FUNCIÓN AUXILIAR: Obtener precio seguro
+const getSafePrice = (price: any): number => {
+  if (!price) return 0;
+  const parsed = parseFloat(price);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+// FUNCIÓN AUXILIAR: Obtener cantidad segura
+const getSafeQuantity = (qty: any): number => {
+  if (!qty) return 1;
+  const parsed = parseInt(qty);
+  return isNaN(parsed) ? 1 : Math.max(1, parsed);
 };
 
 // FUNCIÓN CORREGIDA - Prioriza etapas por orden de flujo
@@ -129,7 +164,6 @@ const getStageToConfirm = (etapas: OrderEtapa[]): OrderState | null => {
   console.log("❌ No se encontró etapa para confirmar");
   return null;
 };
-
 
 // Formatear fecha
 const formatTimeAgo = (dateString: string): string => {
@@ -312,34 +346,44 @@ export const OrderCard = ({ order, onStateChange, onRefresh }: OrderCardProps) =
         </div>
       </div>
 
-      {/* Items */}
+      {/* Items - CORREGIDO CON VALIDACIONES */}
       <div className="space-y-3 mb-4">
-        {(localOrder.items || []).map((item, index) => (
-          <div key={index} className="flex justify-between items-center p-2 bg-secondary/20 rounded-lg">
-            <div>
-              <span className="font-medium text-foreground">
-                {item.qty}x {item.productId.replace(/_/g, ' ')}
-              </span>
-              {item.notes && (
-                <p className="text-xs text-muted-foreground italic mt-0.5">
-                  {item.notes}
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <div className="font-medium">${parseFloat(item.price || "0").toFixed(2)}</div>
-              <div className="text-xs text-muted-foreground">
-                ${(parseFloat(item.price || "0") * parseInt(item.qty || "1")).toFixed(2)}
+        {(localOrder.items || []).map((item, index) => {
+          // Validaciones seguras
+          const productName = getProductName(item.productId);
+          const quantity = getSafeQuantity(item.qty);
+          const price = getSafePrice(item.price);
+          const total = price * quantity;
+          
+          return (
+            <div key={index} className="flex justify-between items-center p-2 bg-secondary/20 rounded-lg">
+              <div>
+                <span className="font-medium text-foreground">
+                  {quantity}x {productName}
+                </span>
+                {item.notes && (
+                  <p className="text-xs text-muted-foreground italic mt-0.5">
+                    {item.notes}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="font-medium">${price.toFixed(2)}</div>
+                <div className="text-xs text-muted-foreground">
+                  ${total.toFixed(2)}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Total */}
+      {/* Total - CORREGIDO */}
       <div className="flex justify-between items-center mb-4 p-3 bg-secondary/10 rounded-lg">
         <span className="font-semibold text-foreground">Total:</span>
-        <span className="font-bold text-lg">${(localOrder.total || 0).toFixed(2)}</span>
+        <span className="font-bold text-lg">
+          ${getSafePrice(localOrder.total).toFixed(2)}
+        </span>
       </div>
 
       {/* Botón de confirmación o estado */}
