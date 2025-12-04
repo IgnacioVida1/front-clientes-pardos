@@ -238,47 +238,7 @@ console.log("🔍 Cálculo de activos:", {
               <h3 className="text-lg font-semibold text-foreground">Distribución por Estado</h3>
             </div>
             
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 rounded">
-                    <Flame className="w-4 h-4 text-orange-600" />
-                  </div>
-                  <span className="font-medium">En Cocina</span>
-                </div>
-                <span className="font-bold text-lg">{safeMetrics.pedidosPorEstado.COOKING}</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded">
-                    <PackageIcon className="w-4 h-4 text-yellow-600" />
-                  </div>
-                  <span className="font-medium">Empaquetando</span>
-                </div>
-                <span className="font-bold text-lg">{safeMetrics.pedidosPorEstado.PACKAGING}</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded">
-                    <Car className="w-4 h-4 text-purple-600" />
-                  </div>
-                  <span className="font-medium">En Entrega</span>
-                </div>
-                <span className="font-bold text-lg">{safeMetrics.pedidosPorEstado.DELIVERY}</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  </div>
-                  <span className="font-medium">Entregados</span>
-                </div>
-                <span className="font-bold text-lg">{safeMetrics.pedidosPorEstado.DELIVERED}</span>
-              </div>
-            </div>
+            
             
             <div className="mt-6 pt-6 border-t border-border">
               <div className="flex items-center justify-between">
@@ -305,58 +265,8 @@ console.log("🔍 Cálculo de activos:", {
 
         {/* Tiempos por etapa y productos populares */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Tiempos por etapa */}
-          <div className="bg-card p-6 rounded-lg border border-border">
-            <div className="flex items-center gap-2 mb-6">
-              <BarChart3 className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">Tiempos por Etapa (minutos)</h3>
-            </div>
-            
-            <div className="space-y-6">
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium text-foreground">Cocina</span>
-                  <span className="font-bold">{safeMetrics.tiemposPorEtapa.COOKING} min</span>
-                </div>
-                <div className="h-3 bg-secondary rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-orange-500 rounded-full"
-                    style={{ width: `${Math.min(safeMetrics.tiemposPorEtapa.COOKING * 3, 100)}%` }}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium text-foreground">Empaquetado</span>
-                  <span className="font-bold">{safeMetrics.tiemposPorEtapa.PACKAGING} min</span>
-                </div>
-                <div className="h-3 bg-secondary rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-yellow-500 rounded-full"
-                    style={{ width: `${Math.min(safeMetrics.tiemposPorEtapa.PACKAGING * 10, 100)}%` }}
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <div className="flex justify-between mb-2">
-                  <span className="font-medium text-foreground">Entrega</span>
-                  <span className="font-bold">{safeMetrics.tiemposPorEtapa.DELIVERY} min</span>
-                </div>
-                <div className="h-3 bg-secondary rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-purple-500 rounded-full"
-                    style={{ width: `${Math.min(safeMetrics.tiemposPorEtapa.DELIVERY * 2, 100)}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-6 pt-6 border-t border-border text-sm text-muted-foreground">
-              <p>Estos son los tiempos promedio que toma cada etapa del proceso.</p>
-            </div>
-          </div>
+          
+         
 
           {/* Productos populares */}
           <div className="bg-card p-6 rounded-lg border border-border">
@@ -417,7 +327,7 @@ console.log("🔍 Cálculo de activos:", {
             
             <MetricCard
             title="Pedidos Activos"
-            value={totalActivos.toString()}
+            value={totalActivos ? totalActivos.toString() : "0"}
             icon={Users}
             variant="warning"
             description="En proceso actualmente"
