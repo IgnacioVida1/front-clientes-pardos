@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Order, OrderState, OrderEtapa } from "@/types/order";
+import { es } from 'date-fns/locale';
 import { 
   Clock, 
   ChevronRight, 
@@ -171,7 +172,7 @@ const formatTimeAgo = (dateString: string): string => {
     if (!dateString) return "Recientemente";
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Recientemente";
-    return formatDistanceToNow(date, { addSuffix: true });
+    return formatDistanceToNow(date, { addSuffix: false, locale: es});
   } catch {
     return "Recientemente";
   }
@@ -180,7 +181,7 @@ const formatTimeAgo = (dateString: string): string => {
 // Obtener ID corto
 const getShortId = (id: string | null | undefined): string => {
   if (!id) return "N/A";
-  return id.length > 8 ? `...${id.slice(-8)}` : id;
+  return id.length > 8 ? `${id.slice(-8)}...` : id;
 };
 
 export const OrderCard = ({ order, onStateChange, onRefresh }: OrderCardProps) => {
@@ -339,11 +340,6 @@ export const OrderCard = ({ order, onStateChange, onRefresh }: OrderCardProps) =
             <span>Cliente: {getShortId(localOrder.customerId)}</span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-1 text-sm text-muted-foreground">
-          <Clock className="w-4 h-4" />
-          <span>{timeAgo}</span>
-        </div>
       </div>
 
       {/* Items - CORREGIDO CON VALIDACIONES */}
@@ -368,9 +364,9 @@ export const OrderCard = ({ order, onStateChange, onRefresh }: OrderCardProps) =
                 )}
               </div>
               <div className="text-right">
-                <div className="font-medium">${price.toFixed(2)}</div>
+                <div className="font-medium">S/. {price.toFixed(2)}</div>
                 <div className="text-xs text-muted-foreground">
-                  ${total.toFixed(2)}
+                  S/. {total.toFixed(2)}
                 </div>
               </div>
             </div>
@@ -382,7 +378,7 @@ export const OrderCard = ({ order, onStateChange, onRefresh }: OrderCardProps) =
       <div className="flex justify-between items-center mb-4 p-3 bg-secondary/10 rounded-lg">
         <span className="font-semibold text-foreground">Total:</span>
         <span className="font-bold text-lg">
-          ${getSafePrice(localOrder.total).toFixed(2)}
+          S/. {getSafePrice(localOrder.total).toFixed(2)}
         </span>
       </div>
 
@@ -433,62 +429,6 @@ export const OrderCard = ({ order, onStateChange, onRefresh }: OrderCardProps) =
           )}
         </div>
       )}
-
-      {/* Historial de etapas */}
-      <details className="mt-4">
-        <summary className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground flex items-center gap-2">
-          <span>📋 Ver etapas ({localOrder.etapas?.length || 0})</span>
-        </summary>
-        <div className="mt-3 space-y-2 max-h-60 overflow-y-auto">
-          {localOrder.etapas && localOrder.etapas.length > 0 ? (
-            localOrder.etapas.map((etapa, index) => (
-              <div 
-                key={index} 
-                className={`p-3 rounded-lg text-sm ${
-                  etapa.status === "DONE" || etapa.status === "COMPLETED"
-                    ? "bg-green-50 border border-green-100" 
-                    : etapa.status === "IN_PROGRESS"
-                    ? "bg-blue-50 border border-blue-100"
-                    : "bg-gray-50 border border-gray-100"
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      etapa.status === "DONE" || etapa.status === "COMPLETED" 
-                        ? "bg-green-500" 
-                        : "bg-blue-500"
-                    }`} />
-                    <span className="font-medium">{etapa.stepName}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded ${
-                      etapa.status === "DONE" || etapa.status === "COMPLETED"
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-blue-100 text-blue-800"
-                    }`}>
-                      {etapa.status}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {etapa.startedAt && formatTimeAgo(etapa.startedAt)}
-                  </div>
-                </div>
-                {etapa.finishedAt && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Completado: {new Date(etapa.finishedAt).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </div>
-                )}
-              </div>
-            ))
-          ) : (
-            <div className="p-3 text-center text-sm text-muted-foreground">
-              No hay historial de etapas
-            </div>
-          )}
-        </div>
-      </details>
     </Card>
   );
 };
